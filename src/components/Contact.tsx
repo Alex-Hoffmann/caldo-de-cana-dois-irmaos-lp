@@ -1,9 +1,5 @@
 import React, { useState, type FormEvent } from 'react';
 import './Contact.css';
-import { sendEmail, EmailApiError } from '../services/emailService';
-import type { EmailRequest } from '../types/email';
-
-const SENDER_EMAIL = import.meta.env.VITE_SENDER_EMAIL || '';
 
 interface FormStatus {
   type: 'idle' | 'loading' | 'success' | 'error';
@@ -33,85 +29,15 @@ const Contact: React.FC = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setStatus({ type: 'loading' });
-
-    try {
-      const emailRequest: EmailRequest = {
-        to: [
-          {
-            email: 'contato@doisirmaos.com.br',
-            name: 'Caldo de Cana Dois Irmãos',
-          },
-        ],
-        subject: `Novo pedido/contato: ${formData.name}`,
-        htmlContent: `
-          <h2>Novo pedido recebido do site</h2>
-          <p><strong>Nome:</strong> ${formData.name}</p>
-          <p><strong>Email:</strong> ${formData.email}</p>
-          <p><strong>Telefone:</strong> ${formData.phone || 'Não informado'}</p>
-          <p><strong>Mensagem:</strong></p>
-          <p>${formData.message.replace(/\n/g, '<br>')}</p>
-        `,
-        textContent: `
-          Novo pedido recebido do site
-
-          Nome: ${formData.name}
-          Email: ${formData.email}
-          Telefone: ${formData.phone || 'Não informado'}
-
-          Mensagem:
-          ${formData.message}
-        `,
-        sender: {
-          email: SENDER_EMAIL,
-          name: 'Website Caldo de Cana Dois Irmãos',
-        },
-        replyTo: {
-          email: formData.email,
-          name: formData.name,
-        },
-        tags: ['contact-form', 'pedidos', 'website'],
-        params: {
-          customerName: formData.name,
-          customerEmail: formData.email,
-          customerPhone: formData.phone,
-        },
-      };
-
-      await sendEmail(emailRequest);
-
       setStatus({
         type: 'success',
         message: 'Mensagem enviada com sucesso! Entraremos em contato em breve.',
       });
-
       setFormData({ name: '', email: '', phone: '', message: '' });
 
       setTimeout(() => {
         setStatus({ type: 'idle' });
       }, 5000);
-
-    } catch (error) {
-      console.error('Error submitting form:', error);
-
-      let errorMessage = 'Erro ao enviar mensagem. Por favor, tente novamente.';
-
-      if (error instanceof EmailApiError) {
-        if (error.status === 401) {
-          errorMessage = 'Erro de autenticação. Por favor, contate o suporte.';
-        } else if (error.status === 400) {
-          errorMessage = error.details?.join(', ') || error.message;
-        } else if (error.status === 502) {
-          errorMessage = 'Serviço de email temporariamente indisponível. Tente novamente mais tarde.';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      setStatus({
-        type: 'error',
-        message: errorMessage,
-      });
-    }
   };
 
   return (
